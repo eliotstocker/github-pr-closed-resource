@@ -78,6 +78,12 @@ func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResp
 	if err := ioutil.WriteFile(filepath.Join(path, "metadata.json"), b, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write metadata: %s", err)
 	}
+	if err := ioutil.WriteFile(filepath.Join(path, "commit"), []byte(request.Version.Commit), 0644); err != nil {
+        return nil, fmt.Errorf("failed to write commit: %s", err)
+    }
+    if err := ioutil.WriteFile(filepath.Join(path, "pr"), []byte(request.Version.PR), 0644); err != nil {
+        return nil, fmt.Errorf("failed to write pr: %s", err)
+    }
 
 	return &GetResponse{
 		Version:  request.Version,

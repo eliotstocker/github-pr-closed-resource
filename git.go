@@ -103,7 +103,7 @@ func (g *GitClient) Fetch(uri string, prNumber int) error {
 	if err != nil {
 		return err
 	}
-	cmd := g.command("git", "fetch", endpoint, fmt.Sprintf("pull/%s/head", strconv.Itoa(prNumber)))
+	cmd := g.command("git", "fetch", endpoint, fmt.Sprintf("pull/%s/head", strconv.Itoa(prNumber)), "--tags")
 
 	// Discard output to have zero chance of logging the access token.
 	cmd.Stdout = ioutil.Discard
