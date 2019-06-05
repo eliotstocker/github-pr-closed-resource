@@ -46,30 +46,17 @@ func (mr *MockGithubMockRecorder) GetPullRequest(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullRequest", reflect.TypeOf((*MockGithub)(nil).GetPullRequest), arg0, arg1)
 }
 
-// ListModifiedFiles mocks base method
-func (m *MockGithub) ListModifiedFiles(arg0 int) ([]string, error) {
-	ret := m.ctrl.Call(m, "ListModifiedFiles", arg0)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListModifiedFiles indicates an expected call of ListModifiedFiles
-func (mr *MockGithubMockRecorder) ListModifiedFiles(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModifiedFiles", reflect.TypeOf((*MockGithub)(nil).ListModifiedFiles), arg0)
-}
-
-// ListOpenPullRequests mocks base method
-func (m *MockGithub) ListOpenPullRequests() ([]*github_pr_resource.PullRequest, error) {
-	ret := m.ctrl.Call(m, "ListOpenPullRequests")
+// ListClosedPullRequests mocks base method
+func (m *MockGithub) ListClosedPullRequests() ([]*github_pr_resource.PullRequest, error) {
+	ret := m.ctrl.Call(m, "ListClosedPullRequests")
 	ret0, _ := ret[0].([]*github_pr_resource.PullRequest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ListOpenPullRequests indicates an expected call of ListOpenPullRequests
-func (mr *MockGithubMockRecorder) ListOpenPullRequests() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListOpenPullRequests", reflect.TypeOf((*MockGithub)(nil).ListOpenPullRequests))
+// ListClosedPullRequests indicates an expected call of ListClosedPullRequests
+func (mr *MockGithubMockRecorder) ListClosedPullRequests() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClosedPullRequests", reflect.TypeOf((*MockGithub)(nil).ListClosedPullRequests))
 }
 
 // PostComment mocks base method

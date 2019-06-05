@@ -10,7 +10,7 @@ import (
 )
 
 // Get (business logic)
-func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResponse, error) {
+func Get(request GetRequest, github Github, outputDir string) (*GetResponse, error) {
 	if request.Params.SkipDownload {
 		return &GetResponse{Version: request.Version}, nil
 	}
@@ -20,34 +20,6 @@ func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResp
 		return nil, fmt.Errorf("failed to retrieve pull request: %s", err)
 	}
 
-	// Initialize and pull the base for the PR
-	if err := git.Init(pull.BaseRefName); err != nil {
-		return nil, err
-	}
-	if err := git.Pull(pull.Repository.URL, pull.BaseRefName); err != nil {
-		return nil, err
-	}
-
-	// Get the last commit SHA in base for the metadata
-	baseSHA, err := git.RevParse(pull.BaseRefName)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch the PR and merge the specified commit into the base
-	if err := git.Fetch(pull.Repository.URL, pull.Number); err != nil {
-		return nil, err
-	}
-	if err := git.Merge(pull.Tip.OID); err != nil {
-		return nil, err
-	}
-
-	if request.Source.GitCryptKey != "" {
-		if err := git.GitCryptUnlock(request.Source.GitCryptKey); err != nil {
-			return nil, err
-		}
-	}
-
 	// Create the metadata
 	var metadata Metadata
 	metadata.Add("pr", strconv.Itoa(pull.Number))
@@ -55,33 +27,32 @@ func Get(request GetRequest, github Github, git Git, outputDir string) (*GetResp
 	metadata.Add("head_name", pull.HeadRefName)
 	metadata.Add("head_sha", pull.Tip.OID)
 	metadata.Add("base_name", pull.BaseRefName)
-	metadata.Add("base_sha", baseSHA)
 	metadata.Add("message", pull.Tip.Message)
 	metadata.Add("author", pull.Tip.Author.User.Login)
 
 	// Write version and metadata for reuse in PUT
-	path := filepath.Join(outputDir, ".git", "resource")
-	if err := os.MkdirAll(path, os.ModePerm); err != nil {
+
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
 		return nil, fmt.Errorf("failed to create output directory: %s", err)
 	}
 	b, err := json.Marshal(request.Version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal version: %s", err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, "version.json"), b, 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(outputDir, "version.json"), b, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write version: %s", err)
 	}
 	b, err = json.Marshal(metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata: %s", err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, "metadata.json"), b, 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(outputDir, "metadata.json"), b, 0644); err != nil {
 		return nil, fmt.Errorf("failed to write metadata: %s", err)
 	}
-	if err := ioutil.WriteFile(filepath.Join(path, "commit"), []byte(request.Version.Commit), 0644); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(outputDir, "commit"), []byte(request.Version.Commit), 0644); err != nil {
         return nil, fmt.Errorf("failed to write commit: %s", err)
     }
-    if err := ioutil.WriteFile(filepath.Join(path, "pr"), []byte(request.Version.PR), 0644); err != nil {
+    if err := ioutil.WriteFile(filepath.Join(outputDir, "pr"), []byte(request.Version.PR), 0644); err != nil {
         return nil, fmt.Errorf("failed to write pr: %s", err)
     }
 

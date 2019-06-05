@@ -13,7 +13,7 @@ func Put(request PutRequest, manager Github, inputDir string) (*PutResponse, err
 	if err := request.Params.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid parameters: %s", err)
 	}
-	path := filepath.Join(inputDir, request.Params.Path, ".git", "resource")
+	path := filepath.Join(inputDir, request.Params.Path)
 
 	// Version available after a GET step.
 	var version Version

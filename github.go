@@ -19,8 +19,7 @@ import (
 // Github for testing purposes.
 //go:generate mockgen -destination=mocks/mock_github.go -package=mocks github.com/telia-oss/github-pr-resource Github
 type Github interface {
-	ListOpenPullRequests() ([]*PullRequest, error)
-	ListModifiedFiles(int) ([]string, error)
+	ListClosedPullRequests() ([]*PullRequest, error)
 	PostComment(string, string) error
 	GetPullRequest(string, string) (*PullRequest, error)
 	UpdateCommitStatus(string, string, string) error
@@ -94,8 +93,8 @@ func NewGithubClient(s *Source) (*GithubClient, error) {
 	}, nil
 }
 
-// ListOpenPullRequests gets the last commit on all open pull requests.
-func (m *GithubClient) ListOpenPullRequests() ([]*PullRequest, error) {
+// ListClosedPullRequests gets the last commit on all open pull requests.
+func (m *GithubClient) ListClosedPullRequests() ([]*PullRequest, error) {
 	var query struct {
 		Repository struct {
 			PullRequests struct {
@@ -115,15 +114,15 @@ func (m *GithubClient) ListOpenPullRequests() ([]*PullRequest, error) {
 					EndCursor   githubv4.String
 					HasNextPage bool
 				}
-			} `graphql:"pullRequests(first:$prFirst,states:$prStates,after:$prCursor)"`
+			} `graphql:"pullRequests(last:$prLast,states:$prStates,after:$prCursor)"`
 		} `graphql:"repository(owner:$repositoryOwner,name:$repositoryName)"`
 	}
 
 	vars := map[string]interface{}{
 		"repositoryOwner": githubv4.String(m.Owner),
 		"repositoryName":  githubv4.String(m.Repository),
-		"prFirst":         githubv4.Int(100),
-		"prStates":        []githubv4.PullRequestState{githubv4.PullRequestStateOpen},
+		"prLast":          githubv4.Int(100),
+		"prStates":        []githubv4.PullRequestState{githubv4.PullRequestStateClosed, githubv4.PullRequestStateMerged},
 		"prCursor":        (*githubv4.String)(nil),
 		"commitsLast":     githubv4.Int(1),
 	}
@@ -147,35 +146,6 @@ func (m *GithubClient) ListOpenPullRequests() ([]*PullRequest, error) {
 		vars["prCursor"] = query.Repository.PullRequests.PageInfo.EndCursor
 	}
 	return response, nil
-}
-
-// ListModifiedFiles in a pull request (not supported by V4 API).
-func (m *GithubClient) ListModifiedFiles(prNumber int) ([]string, error) {
-	var files []string
-
-	opt := &github.ListOptions{
-		PerPage: 100,
-	}
-	for {
-		result, response, err := m.V3.PullRequests.ListFiles(
-			context.TODO(),
-			m.Owner,
-			m.Repository,
-			prNumber,
-			opt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		for _, f := range result {
-			files = append(files, *f.Filename)
-		}
-		if response.NextPage == 0 {
-			break
-		}
-		opt.Page = response.NextPage
-	}
-	return files, nil
 }
 
 // PostComment to a pull request or issue.

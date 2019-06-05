@@ -20,6 +20,7 @@ type Source struct {
 	SkipSSLVerification bool     `json:"skip_ssl_verification"`
 	DisableForks        bool     `json:"disable_forks"`
 	GitCryptKey         string   `json:"git_crypt_key"`
+	Filter              []int    `json:"filter"`
 }
 
 // Validate the source configuration.
@@ -57,15 +58,21 @@ type MetadataField struct {
 type Version struct {
 	PR            string    `json:"pr"`
 	Commit        string    `json:"commit"`
-	CommittedDate time.Time `json:"committed,omitempty"`
+	ClosedDate    time.Time `json:"committed,omitempty"`
 }
 
 // NewVersion constructs a new Version.
 func NewVersion(p *PullRequest) Version {
+    var closed time.Time
+    if !p.ClosedAt.Time.IsZero() {
+        closed = p.ClosedAt.Time
+    } else if !p.MergedAt.Time.IsZero() {
+        closed = p.MergedAt.Time
+    }
 	return Version{
 		PR:            strconv.Itoa(p.Number),
 		Commit:        p.Tip.OID,
-		CommittedDate: p.Tip.CommittedDate.Time,
+		ClosedDate:    closed,
 	}
 }
 
@@ -87,6 +94,8 @@ type PullRequestObject struct {
 	Repository  struct {
 		URL string
 	}
+	ClosedAt    githubv4.DateTime
+	MergedAt    githubv4.DateTime
 	IsCrossRepository bool
 }
 

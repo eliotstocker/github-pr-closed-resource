@@ -29,7 +29,7 @@ func TestPut(t *testing.T) {
 			version: resource.Version{
 				PR:            "pr1",
 				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				ClosedDate: time.Time{},
 			},
 			parameters:  resource.PutParameters{},
 			pullRequest: createTestPR(1, false, false),
@@ -44,7 +44,7 @@ func TestPut(t *testing.T) {
 			version: resource.Version{
 				PR:            "pr1",
 				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				ClosedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status: "success",
@@ -61,7 +61,7 @@ func TestPut(t *testing.T) {
 			version: resource.Version{
 				PR:            "pr1",
 				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				ClosedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Status:  "failure",
@@ -79,7 +79,7 @@ func TestPut(t *testing.T) {
 			version: resource.Version{
 				PR:            "pr1",
 				Commit:        "commit1",
-				CommittedDate: time.Time{},
+				ClosedDate: time.Time{},
 			},
 			parameters: resource.PutParameters{
 				Comment: "comment",
@@ -96,21 +96,12 @@ func TestPut(t *testing.T) {
 			github := mocks.NewMockGithub(ctrl)
 			github.EXPECT().GetPullRequest(tc.version.PR, tc.version.Commit).Times(1).Return(tc.pullRequest, nil)
 
-			git := mocks.NewMockGit(ctrl)
-			gomock.InOrder(
-				git.EXPECT().Init(tc.pullRequest.BaseRefName).Times(1).Return(nil),
-				git.EXPECT().Pull(tc.pullRequest.Repository.URL, tc.pullRequest.BaseRefName).Times(1).Return(nil),
-				git.EXPECT().RevParse(tc.pullRequest.BaseRefName).Times(1).Return("sha", nil),
-				git.EXPECT().Fetch(tc.pullRequest.Repository.URL, tc.pullRequest.Number).Times(1).Return(nil),
-				git.EXPECT().Merge(tc.pullRequest.Tip.OID).Times(1).Return(nil),
-			)
-
 			dir := createTestDirectory(t)
 			defer os.RemoveAll(dir)
 
 			// Run get so we have version and metadata for the put request
 			getInput := resource.GetRequest{Source: tc.source, Version: tc.version, Params: resource.GetParameters{}}
-			_, err := resource.Get(getInput, github, git, dir)
+			_, err := resource.Get(getInput, github, dir)
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
